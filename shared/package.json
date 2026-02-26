@@ -1,0 +1,7 @@
+{
+  "name": "@collabide/shared",
+  "version": "1.0.0",
+  "main": "src/types/ws.ts",
+  "types": "src/types/ws.ts",
+  "private": true
+}
