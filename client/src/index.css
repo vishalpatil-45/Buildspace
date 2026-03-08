@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #121316;
+    color: #e3e2e6;
+    font-size: 14px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbar — thin & minimal */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #414754; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #8b90a0; }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(74, 142, 255, 0.35);
+    color: #e3e2e6;
+  }
+
+  /* Xterm.js container fix */
+  .xterm {
+    height: 100%;
+  }
+  .xterm-viewport {
+    overflow-y: auto !important;
+  }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply bg-primary text-on-primary font-sans text-[11px] font-bold uppercase tracking-[0.05em] px-3 h-6 
+           flex items-center gap-1.5 rounded transition-opacity hover:opacity-90 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-surface-variant border border-outline-variant text-on-surface font-sans text-[11px] font-bold 
+           uppercase tracking-[0.05em] px-3 h-6 flex items-center gap-1.5 rounded 
+           hover:bg-surface-container-high transition-colors;
+  }
+
+  .btn-ghost {
+    @apply flex items-center justify-center w-8 h-8 rounded text-on-surface-variant 
+           hover:text-on-surface hover:bg-surface-variant transition-colors;
+  }
+
+  .btn-icon {
+    @apply w-9 h-9 flex items-center justify-center rounded text-on-surface-variant 
+           hover:text-on-surface hover:bg-surface-variant transition-colors;
+  }
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply bg-surface-container border border-outline-variant rounded px-3 h-8
+           text-on-surface placeholder:text-outline text-sm 
+           focus:outline-none focus:border-primary transition-colors;
+  }
+
+  /* ── Cards / Panels ── */
+  .panel {
+    @apply bg-surface-container border border-outline-variant;
+  }
+
+  .card {
+    @apply bg-surface-container-high border border-outline-variant 
+           hover:border-primary transition-colors;
+  }
+
+  /* ── Tabs ── */
+  .tab {
+    @apply flex items-center gap-1.5 px-4 h-9 flex-shrink-0 cursor-pointer
+           border-r border-outline-variant text-on-surface-variant text-[13px]
+           hover:bg-surface-variant hover:text-on-surface transition-colors opacity-60;
+  }
+
+  .tab-active {
+    @apply bg-background text-on-surface opacity-100 border-t-2 border-t-primary;
+  }
+
+  /* ── Status bar item ── */
+  .status-item {
+    @apply flex items-center gap-xs px-sm h-full text-on-primary font-mono text-[12px]
+           hover:bg-primary-container hover:text-on-primary-container transition-colors cursor-pointer;
+  }
+
+  /* ── Sidebar item ── */
+  .sidebar-item {
+    @apply w-full flex items-center justify-center py-2 text-on-surface-variant 
+           hover:text-on-surface hover:bg-surface-variant transition-colors cursor-pointer;
+  }
+
+  .sidebar-item-active {
+    @apply border-l-2 border-primary text-primary bg-surface-variant;
+  }
+
+  /* ── File tree item ── */
+  .filetree-item {
+    @apply flex items-center gap-xs px-sm py-[3px] rounded-[2px] cursor-pointer
+           text-on-surface-variant text-[13px] hover:bg-surface-container-high 
+           hover:text-on-surface transition-colors;
+  }
+
+  .filetree-item-active {
+    @apply bg-surface-variant text-on-surface font-semibold italic;
+  }
+
+  /* ── Label caps ── */
+  .label-caps {
+    @apply font-sans text-[11px] font-bold uppercase tracking-[0.05em];
+  }
+
+  /* ── Syntax highlighting colors ── */
+  .syntax-keyword { color: #ffb59e; }
+  .syntax-string  { color: #79ff5b; }
+  .syntax-function { color: #adc7ff; }
+  .syntax-comment { color: #8b90a0; font-style: italic; }
+  .syntax-variable { color: #e3e2e6; }
+
+  /* ── Saving indicator animation ── */
+  @keyframes saving-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .saving-indicator {
+    animation: saving-pulse 1.2s ease-in-out infinite;
+  }
+
+  /* ── Resize handle ── */
+  .resize-handle {
+    @apply h-[3px] bg-outline-variant/30 hover:bg-primary/50 transition-colors cursor-row-resize flex-shrink-0;
+  }
+
+  /* ── Presence dot ── */
+  .presence-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  /* ── Notification badge ── */
+  .badge {
+    @apply absolute -top-0.5 -right-0.5 w-2 h-2 bg-secondary-container 
+           rounded-full border border-surface-container;
+  }
+
+  /* ── Collaboration cursor label ── */
+  .collab-cursor-label {
+    @apply font-sans text-[9px] font-bold uppercase tracking-wider px-1 py-0 
+           rounded-[2px] whitespace-nowrap pointer-events-none;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .text-headline-lg { 
+    font-family: 'Geist', sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .text-headline-md {
+    font-family: 'Geist', sans-serif;
+    font-size: 18px;
+    line-height: 24px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  .font-code { font-family: 'JetBrains Mono', monospace; }
+  .font-headline { font-family: 'Geist', sans-serif; }
+}
