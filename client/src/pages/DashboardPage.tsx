@@ -112,6 +112,9 @@ export default function DashboardPage() {
     navigate('/login');
   };
 
+  const isProjectBusy = (projectId: string) =>
+    deletingId === projectId || (isRenaming && renameTarget?.id === projectId);
+
   const roleColor: Record<string, string> = {
     owner: 'text-tertiary',
     editor: 'text-primary',
@@ -270,14 +273,22 @@ export default function DashboardPage() {
           )}
 
           {renameTarget && (
-            <div className="mx-md mt-md p-md bg-surface-container border border-outline-variant animate-slide-up">
-              <h2 className="label-caps text-on-surface mb-sm">Rename Project</h2>
+            <div
+              className="mx-md mt-md p-md bg-surface-container border border-outline-variant animate-slide-up"
+              role="dialog"
+              aria-labelledby="rename-project-title"
+              aria-modal="false"
+            >
+              <h2 id="rename-project-title" className="label-caps text-on-surface mb-sm">Rename Project</h2>
               <form onSubmit={handleRename} className="flex gap-sm">
                 <input
                   autoFocus
                   type="text"
                   value={renameDraft}
                   onChange={(e) => setRenameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setRenameTarget(null);
+                  }}
                   className="input-field flex-1"
                   placeholder="Enter project name"
                 />
@@ -367,62 +378,65 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid gap-md grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="card p-md flex flex-col justify-between min-h-[160px] cursor-pointer group"
-                    onClick={() => navigate(`/project/${project.id}`)}
-                  >
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-headline-md text-on-surface truncate flex-1 mr-sm">
-                          {project.name}
-                        </h3>
-                        <button
-                          id={`rename-project-${project.id}`}
-                          onClick={(e) => openRename(project.id, project.name, e)}
-                          className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-surface-variant text-outline hover:text-on-surface transition-all"
-                          title="Rename project"
-                          disabled={(isRenaming && renameTarget?.id === project.id) || deletingId === project.id}
-                        >
-                          {isRenaming && renameTarget?.id === project.id ? (
-                            <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
-                          ) : (
-                            <span className="material-symbols-outlined text-[14px]">drive_file_rename_outline</span>
-                          )}
-                        </button>
-                        <button
-                          id={`delete-project-${project.id}`}
-                          onClick={(e) => handleDelete(project.id, project.name, e)}
-                          className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-error-container text-outline hover:text-error transition-all"
-                          title="Delete project"
-                          disabled={(isRenaming && renameTarget?.id === project.id) || deletingId === project.id}
-                        >
-                          {deletingId === project.id ? (
-                            <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
-                          ) : (
-                            <span className="material-symbols-outlined text-[14px]">delete</span>
-                          )}
-                        </button>
+                {filteredProjects.map((project) => {
+                  const projectBusy = isProjectBusy(project.id);
+                  return (
+                    <div
+                      key={project.id}
+                      className="card p-md flex flex-col justify-between min-h-[160px] cursor-pointer group"
+                      onClick={() => navigate(`/project/${project.id}`)}
+                    >
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-headline-md text-on-surface truncate flex-1 mr-sm">
+                            {project.name}
+                          </h3>
+                          <button
+                            id={`rename-project-${project.id}`}
+                            onClick={(e) => openRename(project.id, project.name, e)}
+                            className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-surface-variant text-outline hover:text-on-surface transition-all"
+                            title="Rename project"
+                            disabled={projectBusy}
+                          >
+                            {isRenaming && renameTarget?.id === project.id ? (
+                              <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+                            ) : (
+                              <span className="material-symbols-outlined text-[14px]">drive_file_rename_outline</span>
+                            )}
+                          </button>
+                          <button
+                            id={`delete-project-${project.id}`}
+                            onClick={(e) => handleDelete(project.id, project.name, e)}
+                            className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-error-container text-outline hover:text-error transition-all"
+                            title="Delete project"
+                            disabled={projectBusy}
+                          >
+                            {deletingId === project.id ? (
+                              <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+                            ) : (
+                              <span className="material-symbols-outlined text-[14px]">delete</span>
+                            )}
+                          </button>
+                        </div>
+                        <p className="font-code text-[11px] text-outline mt-xs">
+                          Modified {formatTime(project.updated_at)}
+                        </p>
                       </div>
-                      <p className="font-code text-[11px] text-outline mt-xs">
-                        Modified {formatTime(project.updated_at)}
-                      </p>
-                    </div>
 
-                    <div className="flex justify-between items-end mt-lg">
-                      <div className="flex items-center gap-xs">
-                        <div className={`w-2 h-2 rounded-full ${statusDot[project.role] ?? 'bg-outline'}`} />
-                        <span className={`label-caps ${roleColor[project.role] ?? 'text-outline'}`}>
-                          {project.role}
+                      <div className="flex justify-between items-end mt-lg">
+                        <div className="flex items-center gap-xs">
+                          <div className={`w-2 h-2 rounded-full ${statusDot[project.role] ?? 'bg-outline'}`} />
+                          <span className={`label-caps ${roleColor[project.role] ?? 'text-outline'}`}>
+                            {project.role}
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-[14px] text-outline group-hover:text-primary transition-colors">
+                          chevron_right
                         </span>
                       </div>
-                      <span className="material-symbols-outlined text-[14px] text-outline group-hover:text-primary transition-colors">
-                        chevron_right
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* New project card */}
                 <div
