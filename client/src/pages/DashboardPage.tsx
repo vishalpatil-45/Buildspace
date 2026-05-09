@@ -82,11 +82,13 @@ export default function DashboardPage() {
     setRenameDraft(currentName);
   };
 
+  const trimmedRenameDraft = renameDraft.trim();
+
   const handleRename = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!renameTarget) return;
 
-    const nextName = renameDraft.trim();
+    const nextName = trimmedRenameDraft;
     if (!nextName || nextName === renameTarget.name) {
       setRenameTarget(null);
       return;
@@ -279,7 +281,7 @@ export default function DashboardPage() {
               aria-labelledby="rename-project-title"
               aria-modal="false"
             >
-              <h2 id="rename-project-title" className="label-caps text-on-surface mb-sm">Rename Project</h2>
+              <h3 id="rename-project-title" className="label-caps text-on-surface mb-sm">Rename Project</h3>
               <form onSubmit={handleRename} className="flex gap-sm">
                 <input
                   autoFocus
@@ -294,7 +296,7 @@ export default function DashboardPage() {
                 />
                 <button
                   type="submit"
-                  disabled={isRenaming || !renameDraft.trim()}
+                  disabled={isRenaming || !trimmedRenameDraft}
                   className="btn-primary"
                 >
                   {isRenaming ? (
