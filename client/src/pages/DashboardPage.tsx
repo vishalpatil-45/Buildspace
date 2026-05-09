@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { projectsApi, authApi } from '@/api/client';
@@ -23,6 +23,10 @@ export default function DashboardPage() {
   const [newProjectName, setNewProjectName] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'owner' | 'editor' | 'viewer'>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'name'>('recent');
 
   const loadProjects = async () => {
     try {
@@ -70,6 +74,25 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRename = async (id: string, currentName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const renamed = prompt('Rename project', currentName);
+    if (renamed === null) return;
+    const nextName = renamed.trim();
+    if (!nextName || nextName === currentName) return;
+
+    setRenamingId(id);
+    try {
+      await projectsApi.update(id, nextName);
+      setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, name: nextName } : project)));
+      toast.success('Project renamed');
+    } catch {
+      toast.error('Failed to rename project');
+    } finally {
+      setRenamingId(null);
+    }
+  };
+
   const handleLogout = async () => {
     await authApi.logout().catch(() => {});
     logout();
@@ -87,6 +110,21 @@ export default function DashboardPage() {
     editor: 'bg-primary',
     viewer: 'bg-outline',
   };
+
+  const filteredProjects = useMemo(() => {
+    let next = projects.filter((project) => {
+      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = roleFilter === 'all' || project.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+
+    next = next.sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+
+    return next;
+  }, [projects, roleFilter, searchQuery, sortBy]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background text-on-surface">
@@ -221,8 +259,38 @@ export default function DashboardPage() {
           <div className="p-md">
             <div className="flex items-center justify-between mb-md">
               <span className="label-caps text-on-surface-variant">
-                Explorer — {projects.length} project{projects.length !== 1 ? 's' : ''}
+                Explorer — {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
+                {filteredProjects.length !== projects.length && (
+                  <span className="text-outline"> of {projects.length}</span>
+                )}
               </span>
+              <div className="flex items-center gap-sm">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search projects"
+                  className="input-field w-44 h-8"
+                />
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as 'all' | 'owner' | 'editor' | 'viewer')}
+                  className="input-field h-8 min-w-[110px]"
+                >
+                  <option value="all">All roles</option>
+                  <option value="owner">Owner</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'recent' | 'name')}
+                  className="input-field h-8 min-w-[120px]"
+                >
+                  <option value="recent">Recent</option>
+                  <option value="name">Name</option>
+                </select>
+              </div>
             </div>
 
             {loading ? (
@@ -242,9 +310,14 @@ export default function DashboardPage() {
                   Create Project
                 </button>
               </div>
+            ) : filteredProjects.length === 0 ? (
+              <div className="text-center py-24">
+                <h3 className="text-headline-md text-on-surface mb-sm">No matching projects</h3>
+                <p className="text-on-surface-variant text-[13px]">Try a different search or filter.</p>
+              </div>
             ) : (
               <div className="grid gap-md grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {projects.map((project) => (
+                {filteredProjects.map((project) => (
                   <div
                     key={project.id}
                     className="card p-md flex flex-col justify-between min-h-[160px] cursor-pointer group"
@@ -256,10 +329,24 @@ export default function DashboardPage() {
                           {project.name}
                         </h3>
                         <button
+                          id={`rename-project-${project.id}`}
+                          onClick={(e) => handleRename(project.id, project.name, e)}
+                          className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-surface-variant text-outline hover:text-on-surface transition-all"
+                          title="Rename project"
+                          disabled={renamingId === project.id || deletingId === project.id}
+                        >
+                          {renamingId === project.id ? (
+                            <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-[14px]">drive_file_rename_outline</span>
+                          )}
+                        </button>
+                        <button
                           id={`delete-project-${project.id}`}
                           onClick={(e) => handleDelete(project.id, project.name, e)}
                           className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-error-container text-outline hover:text-error transition-all"
                           title="Delete project"
+                          disabled={renamingId === project.id || deletingId === project.id}
                         >
                           {deletingId === project.id ? (
                             <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
