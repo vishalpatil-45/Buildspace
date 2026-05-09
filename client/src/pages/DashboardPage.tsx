@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const [newProjectName, setNewProjectName] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,7 +92,7 @@ export default function DashboardPage() {
       return;
     }
 
-    setRenamingId(renameTarget.id);
+    setIsRenaming(true);
     try {
       await projectsApi.update(renameTarget.id, nextName);
       setProjects((prev) => prev.map((project) => (project.id === renameTarget.id ? { ...project, name: nextName } : project)));
@@ -102,7 +102,7 @@ export default function DashboardPage() {
       console.error('Rename project failed', error);
       toast.error('Failed to rename project');
     } finally {
-      setRenamingId(null);
+      setIsRenaming(false);
     }
   };
 
@@ -283,10 +283,10 @@ export default function DashboardPage() {
                 />
                 <button
                   type="submit"
-                  disabled={renamingId === renameTarget.id || !renameDraft.trim()}
+                  disabled={isRenaming || !renameDraft.trim()}
                   className="btn-primary"
                 >
-                  {renamingId === renameTarget.id ? (
+                  {isRenaming ? (
                     <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
                   ) : (
                     <span className="material-symbols-outlined text-[14px]">save</span>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                   type="button"
                   className="btn-secondary"
                   onClick={() => setRenameTarget(null)}
-                  disabled={renamingId === renameTarget.id}
+                  disabled={isRenaming}
                 >
                   Cancel
                 </button>
@@ -383,9 +383,9 @@ export default function DashboardPage() {
                           onClick={(e) => openRename(project.id, project.name, e)}
                           className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-surface-variant text-outline hover:text-on-surface transition-all"
                           title="Rename project"
-                          disabled={renamingId === project.id || deletingId === project.id}
+                          disabled={(isRenaming && renameTarget?.id === project.id) || deletingId === project.id}
                         >
-                          {renamingId === project.id ? (
+                          {isRenaming && renameTarget?.id === project.id ? (
                             <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
                           ) : (
                             <span className="material-symbols-outlined text-[14px]">drive_file_rename_outline</span>
@@ -396,7 +396,7 @@ export default function DashboardPage() {
                           onClick={(e) => handleDelete(project.id, project.name, e)}
                           className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-error-container text-outline hover:text-error transition-all"
                           title="Delete project"
-                          disabled={renamingId === project.id || deletingId === project.id}
+                          disabled={(isRenaming && renameTarget?.id === project.id) || deletingId === project.id}
                         >
                           {deletingId === project.id ? (
                             <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
