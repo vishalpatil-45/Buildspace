@@ -24,6 +24,8 @@ export default function DashboardPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'owner' | 'editor' | 'viewer'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'name'>('recent');
@@ -74,19 +76,30 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRename = async (id: string, currentName: string, e: React.MouseEvent) => {
+  const openRename = (id: string, currentName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const renamed = prompt('Rename project', currentName);
-    if (renamed === null) return;
-    const nextName = renamed.trim();
-    if (!nextName || nextName === currentName) return;
+    setRenameTarget({ id, name: currentName });
+    setRenameDraft(currentName);
+  };
 
-    setRenamingId(id);
+  const handleRename = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renameTarget) return;
+
+    const nextName = renameDraft.trim();
+    if (!nextName || nextName === renameTarget.name) {
+      setRenameTarget(null);
+      return;
+    }
+
+    setRenamingId(renameTarget.id);
     try {
-      await projectsApi.update(id, nextName);
-      setProjects((prev) => prev.map((project) => (project.id === id ? { ...project, name: nextName } : project)));
+      await projectsApi.update(renameTarget.id, nextName);
+      setProjects((prev) => prev.map((project) => (project.id === renameTarget.id ? { ...project, name: nextName } : project)));
       toast.success('Project renamed');
-    } catch {
+      setRenameTarget(null);
+    } catch (error) {
+      console.error('Rename project failed', error);
       toast.error('Failed to rename project');
     } finally {
       setRenamingId(null);
@@ -112,8 +125,9 @@ export default function DashboardPage() {
   };
 
   const filteredProjects = useMemo(() => {
+    const normalizedSearchQuery = searchQuery.toLowerCase();
     let next = projects.filter((project) => {
-      const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = project.name.toLowerCase().includes(normalizedSearchQuery);
       const matchesRole = roleFilter === 'all' || project.role === roleFilter;
       return matchesSearch && matchesRole;
     });
@@ -255,6 +269,42 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {renameTarget && (
+            <div className="mx-md mt-md p-md bg-surface-container border border-outline-variant animate-slide-up">
+              <h2 className="label-caps text-on-surface mb-sm">Rename Project</h2>
+              <form onSubmit={handleRename} className="flex gap-sm">
+                <input
+                  autoFocus
+                  type="text"
+                  value={renameDraft}
+                  onChange={(e) => setRenameDraft(e.target.value)}
+                  className="input-field flex-1"
+                  placeholder="Enter project name"
+                />
+                <button
+                  type="submit"
+                  disabled={renamingId === renameTarget.id || !renameDraft.trim()}
+                  className="btn-primary"
+                >
+                  {renamingId === renameTarget.id ? (
+                    <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-[14px]">save</span>
+                  )}
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setRenameTarget(null)}
+                  disabled={renamingId === renameTarget.id}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* Project grid */}
           <div className="p-md">
             <div className="flex items-center justify-between mb-md">
@@ -330,7 +380,7 @@ export default function DashboardPage() {
                         </h3>
                         <button
                           id={`rename-project-${project.id}`}
-                          onClick={(e) => handleRename(project.id, project.name, e)}
+                          onClick={(e) => openRename(project.id, project.name, e)}
                           className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded hover:bg-surface-variant text-outline hover:text-on-surface transition-all"
                           title="Rename project"
                           disabled={renamingId === project.id || deletingId === project.id}
