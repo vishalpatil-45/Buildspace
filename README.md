@@ -19,7 +19,6 @@ Think:
 
 ## 📸 Preview
 
-> Add screenshots or GIFs here
 
 ### Collaborative Editing
 
